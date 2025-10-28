@@ -17,7 +17,7 @@ const SUPPORT_DOMAINS = {
     'ADMIN': 'admin'
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = "https://echo-backend-rv3o.onrender.com";
 
 const bubbleVariants = {
     hidden: { opacity: 0, scale: 0.9, y: 20 },
