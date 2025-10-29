@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 // 🎯 Import the API_BASE_URL from your new config.js file
-import { API_BASE_URL } from './config'; 
+import { API_BASE_URL } from '../../config'; 
 
 // Create Auth Context
 const AuthContext = createContext();
