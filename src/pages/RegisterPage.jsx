@@ -5,13 +5,6 @@ import { ArrowLeft, Mail, Lock, User, Chrome } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { motion } from 'framer-motion';
 
-// 🎯 IMPORT THE CORRECT LIVE URL FUNCTION
-// Assuming your Axios config file is in '../api/api' and exports googleLoginUrl.
-// If you cannot import it, define the function directly using the public URL.
-import { googleLoginUrl } from '../api/api'; 
-// If '../api/api' doesn't exist, use this fallback function instead:
-// const googleLoginUrl = () => "https://echo-backend-1-ubeb.onrender.com/auth/google/login";
-
 const RegisterPage = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
@@ -19,12 +12,9 @@ const RegisterPage = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  // 🚨 FIX: Now uses the function imported from your API file (or the fixed constant)
   const handleGoogleRegister = () => {
-    // This will now correctly resolve to https://echo-backend-1-ubeb.onrender.com/auth/google/login
-    window.location.href = googleLoginUrl(); 
+    window.location.href = "http://localhost:8000/auth/google/login";
   };
-  
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
