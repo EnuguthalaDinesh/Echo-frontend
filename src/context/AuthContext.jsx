@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
     if (!user || !user.access_token) return;
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const socket = new WebSocket(`${protocol}://localhost:8000/ws?token=${user.access_token}`);
+    const socket = new WebSocket(`${protocol}://https://echo-backend-1-ubeb.onrender.com/ws?token=${user.access_token}`);
 
     socket.onopen = () => console.log("✅ WebSocket connected");
     socket.onclose = () => console.log("❌ WebSocket closed");
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/register", {
+      const res = await fetch("https://echo-backend-1-ubeb.onrender.com/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/login", {
+      const res = await fetch("https://echo-backend-1-ubeb.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
