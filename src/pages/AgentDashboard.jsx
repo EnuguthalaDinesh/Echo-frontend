@@ -5,7 +5,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import { motion } from "framer-motion";
 
 // Assume API is running on localhost:8000 (Based on previous config)
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://echo-backend-1-ubeb.onrender.com";
 
 // --- Helper: SLA Color ---
 function slaColor(openedAt) {
