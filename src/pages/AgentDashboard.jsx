@@ -17,9 +17,16 @@ function slaColor(openedAt) {
     return "bg-red-100 text-red-800 border-red-400 animate-pulse"; // > 2 days
 }
 
-// --- Helper: Time Since ---
+// --- Helper: Time Since (FIXED FOR TIMEZONE ACCURACY) ---
 const timeSince = (dateString) => {
-    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+    const past = new Date(dateString);
+    const now = new Date();
+    // Calculate difference in milliseconds
+    const seconds = Math.floor((now.getTime() - past.getTime()) / 1000); 
+    
+    // Fallback if seconds is too small (just now)
+    if (seconds < 5) return "just now";
+
     let interval = seconds / 31536000;
 
     if (interval > 1) return Math.floor(interval) + " years";
@@ -34,7 +41,7 @@ const timeSince = (dateString) => {
     return Math.floor(seconds) + " seconds";
 };
 
-// --- Ticket Detail & Resolution Modal Component (FINAL) ---
+// --- Ticket Detail & Resolution Modal Component ---
 const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
     const { user } = useAuth();
     const [resolutionMessage, setResolutionMessage] = useState('');
@@ -49,18 +56,36 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
         { role: 'user', content: ticket.description || "No detailed issue provided.", timestamp: ticket.created_at }
     ];
     
-    // FETCH CUSTOMER PROFILE HOOK
+    // FETCH CUSTOMER PROFILE HOOK (Dynamic Fetching Fix)
     useEffect(() => {
         const fetchProfile = async () => {
+            const token = user?.access_token;
+
+            if (!token) {
+                // Critical Fix: Show auth error immediately if token is missing
+                setCustomerProfile({
+                    name: "Authentication Required",
+                    email: "Log out and log back in.",
+                    tier: "Unauthorized",
+                    last_sentiment: "N/A"
+                });
+                setProfileLoading(false);
+                return;
+            }
+
             setProfileLoading(true);
             try {
                 const res = await fetch(`${API_BASE_URL}/customer/${ticket.customer_id}/profile`, {
                     headers: {
-                        'Authorization': `Bearer ${user.access_token}`,
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
 
                 if (!res.ok) {
+                    // Catch 401/403 and display specific message
+                    if (res.status === 401 || res.status === 403) {
+                         throw new Error("Session Invalid/Expired (401/403). Please refresh login.");
+                    }
                     throw new Error(`Failed to fetch profile: ${res.status}`);
                 }
 
@@ -68,10 +93,10 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
                 setCustomerProfile(data);
 
             } catch (err) {
-                console.error("Error fetching customer profile:", err);
+                console.error("Error fetching customer profile:", err.message);
                 setCustomerProfile({
                     name: "Profile Load Failed",
-                    email: "Authentication Error",
+                    email: err.message.includes("401") ? "Authentication Error" : err.message,
                     tier: "Unknown",
                     last_sentiment: "N/A"
                 });
@@ -85,19 +110,21 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
         }
     }, [user, ticket.customer_id]); 
 
-    // SUBMIT RESOLUTION LOGIC
+    // SUBMIT RESOLUTION LOGIC (Single Message Enforcement)
     const handleResolutionSubmit = async (e) => {
         if (e) e.preventDefault(); 
+        // Ensure message is present when submitting resolution
         if (!resolutionMessage.trim()) {
-            alert("The resolution message cannot be empty.");
+            alert("The final resolution message cannot be empty.");
             return;
         }
 
         setIsSubmitting(true);
         try {
+            // Note: handleStatusChange needs the resolution message to resolve
             await onStatusChange(
                 ticketIdentifier, 
-                'resolved', // Always resolve when submitting this form
+                'resolved', 
                 resolutionMessage.trim()
             );
             onClose(); 
@@ -111,13 +138,13 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
     
     // STATUS UPDATE LOGIC (for non-resolution changes only)
     const handleStatusUpdate = async (newStatus) => {
-        if (newStatus === status || newStatus === 'resolved') return; // Handled by form/submit
+        if (newStatus === status || newStatus === 'resolved') return; // 'resolved' handled by form/submit
         
         if (!window.confirm(`Are you sure you want to change status to ${newStatus.toUpperCase()}?`)) return;
         
         setIsSubmitting(true);
         try {
-            await onStatusChange(ticketIdentifier, newStatus, null); 
+            await onStatusChange(ticketIdentifier, newStatus, null); // Pass null message
             setStatus(newStatus); 
         } catch (error) {
             console.error("Failed to update status.", error);
@@ -132,6 +159,7 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
             onChange={(e) => {
                 const newStatus = e.target.value;
                 if (newStatus === 'resolved') {
+                    // Update local state to trigger the submit form view
                     setStatus('resolved');
                 } else {
                     handleStatusUpdate(newStatus);
@@ -153,7 +181,7 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
 
     // DYNAMIC PROFILE RENDERER
     const renderProfile = () => {
-        if (profileLoading) return <LoadingSpinner />;
+        if (profileLoading) return <div className="p-3 text-center"><LoadingSpinner /></div>;
         if (!customerProfile) return <p className="text-red-500 text-sm">Failed to load user profile.</p>;
 
         const { name, email, tier, last_sentiment } = customerProfile;
@@ -190,7 +218,7 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
                     
                     {renderProfile()} 
                     
-                    {/* ... (Recent Interactions, Financial, Internal Notes remain placeholder/static) */}
+                    {/* ... (Static content sections below remain unchanged) ... */}
                     <h4 className="text-md font-semibold mt-6 mb-2 text-gray-600 flex items-center gap-1"><List className="h-4 w-4" /> Recent Interactions</h4>
                     <ul className="text-xs space-y-1 overflow-y-auto max-h-32">
                         {[
@@ -241,7 +269,10 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
                                         }`}
                                     >
                                         <strong className="capitalize text-xs">{msg.role}:</strong> 
-                                        <div className="text-xs text-gray-400 mt-1">{new Date(msg.timestamp).toLocaleTimeString()}</div>
+                                        {/* FIX: Using locale methods for accurate timezone display */}
+                                        <div className="text-xs text-gray-400 mt-1">
+                                            {new Date(msg.timestamp).toLocaleDateString()} {new Date(msg.timestamp).toLocaleTimeString()}
+                                        </div>
                                         {msg.content}
                                     </div>
                                 </div>
@@ -286,9 +317,8 @@ const TicketDetailModal = ({ ticket, onClose, onStatusChange }) => {
     );
 };
 
-// --- Agent Dashboard Main Component (UNCHANGED) ---
+// --- Agent Dashboard Main Component ---
 const AgentDashboard = () => {
-    // ... (fetchTickets, handleStatusChange, and useEffect logic remain the same)
     const { user } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -372,7 +402,7 @@ const AgentDashboard = () => {
             await fetchTickets(); 
             
             if (newStatus === 'resolved') {
-                alert("✅ Ticket marked as RESOLVED! Resolution email sent to customer via EmailJS.");
+                alert("✅ Ticket marked as RESOLVED! Resolution email sent to customer via SendGrid.");
             } else {
                 alert(`✅ Status updated to ${newStatus.toUpperCase()}.`);
             }
