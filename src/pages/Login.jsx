@@ -6,8 +6,8 @@ import { ArrowLeft, Mail, Lock, Chrome } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // --- CONFIGURATION ---
-const API_BASE_URL = "https://echo-backend-1-ubeb.onrender.com"; // Use the global API base URL
-const GOOGLE_AUTH_URL = `${API_BASE_URL}/auth/google/login`; // Direct link to FastAPI OAuth start endpoint
+const API_BASE_URL = "https://echo-backend-1-ubeb.onrender.com"; 
+const GOOGLE_AUTH_URL = `${API_BASE_URL}/auth/google/login`;
 // ---------------------
 
 const AnimatedInput = ({ icon, name, type, placeholder, value, onChange }) => (
@@ -40,8 +40,6 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
-
-    // REMOVED handleGoogleLogin function
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -103,13 +101,13 @@ const Login = () => {
                     className="mt-7 w-full bg-gradient-to-tr from-purple-400 via-pink-400 to-blue-400 text-white font-bold py-3 rounded-full shadow-md transition-all text-lg relative"
                 >{loading ? <LoadingSpinner /> : "Sign In 😊"}
                 </motion.button>
-                <a href={GOOGLE_AUTH_URL} className="block"> {/* USE A TAG FOR EXTERNAL REDIRECT */}
+                <a href={GOOGLE_AUTH_URL} className="block">
                     <motion.button
                         type="button"
                         whileHover={{ scale: 1.04, backgroundColor: "#fffde4" }}
                         className="mt-4 w-full bg-white hover:bg-purple-50 border border-purple-300 text-purple-600 font-medium py-3 rounded-full shadow-sm flex items-center justify-center space-x-2 transition"
                     >
-                        <Chrome className="h-5 w-5 text-yellow-400" /> {/* Removed animate-spin to be less distracting */}
+                        <Chrome className="h-5 w-5 text-yellow-400" />
                         <span>Sign in with Google</span>
                     </motion.button>
                 </a>
